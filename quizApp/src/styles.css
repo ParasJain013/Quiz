@@ -1,0 +1,61 @@
+/* You can add global styles to this file, and also import other style files */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+app-root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* background-color: #edf4c2; */
+  /* width: 30%; */
+}
+.bgcolor {
+  background-color: #faffd8;
+}
+.navbar {
+  background: #ff6b35;
+  color: white;
+}
+.cardsBG {
+  background-color: #edf4c2;
+}
+
+.primaryText {
+  color: #eb5a3c;
+}
+app-login {
+  display: flex;
+  height: 100%;
+  flex-grow: 1;
+}
+.btntake {
+  background-color: #df9755;
+}
+.btntake:hover {
+  background-color: #ef923c;
+}
+.optionBtn {
+  background: #FED7AA ;
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 2px #ff6b35;
+}
+.optionBtn:hover , .optionBtnSelected:hover {
+  background: #EA580C;
+  border-color: #e55a28;
+}
+.optionBtnSelected {
+  background: #ff6b35;
+  border-color: #ff6b35;
+  color: white;
+}
+.navigation-btn{
+  
+}
+/* #EB5A3C
+#DF9755
+#E7D283
+#EDF4C2 */

@@ -1,0 +1,10 @@
+body{
+    display: flex;
+}
+.smallsize{
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+}
+.formContainer{
+    max-height: 300px;
+}

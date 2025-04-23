@@ -1,0 +1,5 @@
+/quizApp/node_modules
+/quizAppBackend/node_modules
+
+/quizApp/src/environments
+/quizAppBackend/.env
