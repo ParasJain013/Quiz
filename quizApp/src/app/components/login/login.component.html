@@ -19,8 +19,8 @@
 
     <button
       class="btn w-100 mt-3"
-      [disabled]="nameInputValid()"
-      [ngClass]="{ 'optionBtnSelected': name, 'btn-secondary': !name }"
+      [disabled]="isNameInvalid"
+      [ngClass]="{ 'optionBtnSelected': name.trim(), 'btn-secondary': !name.trim() }"
       [routerLink]="'/quiz'"
       (click)="onNextClick()"
     >

@@ -13,14 +13,13 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./login.component.css'],
 })
 export class LoginComponent implements OnInit, OnDestroy {
-  name: string = '';
-  nameSubscription!: Subscription;
+  name = '';
+  nameSubscription: Subscription | null = null;
 
   constructor(private userService: UserService, private router: Router) {}
 
   ngOnInit(): void {
     const currentName = this.userService.getName();
-    console.log(currentName)
     if (currentName) {
       this.router.navigate(['/quiz']);
     }
@@ -33,22 +32,22 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   onNameChange(value: string) {
-    this.name = value.trim(); 
+    this.name = value;
   }
-  nameInputValid(){
-    if (!this.name || this.name.trim().length === 0) {
-      // alert('Please enter a valid name');
-      return true;
-    }
-    return false;
+
+  get isNameInvalid(): boolean {
+    return !this.name.trim();
   }
+
   onNextClick() {
-    if (this.name.trim()) {
-      this.userService.setName(this.name.trim());
+    const trimmedName = this.name.trim();
+    if (trimmedName) {
+      this.userService.setName(trimmedName);
     }
   }
 
   ngOnDestroy(): void {
-    this.nameSubscription.unsubscribe();
+    this.nameSubscription?.unsubscribe();
   }
 }
+

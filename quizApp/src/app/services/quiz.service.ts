@@ -20,6 +20,7 @@ export interface LeaderboardEntry {
   latestScore: number;
   subject: SubjectType;
   timestamp: number;
+  latestScoreDate: string
 }
 export interface ApiQuestion {
   q: string;
@@ -69,7 +70,7 @@ export class QuizService {
   getSubject(): SubjectType | null {
     return this.subjectSource.getValue();
   }
-  getLeaderboard(): Observable<LeaderboardEntry> | null {
-      return this.http.get<LeaderboardEntry>(`${this.apiUrl}leaderboard/getLeaderboard`)
+  getLeaderboard(): Observable<LeaderboardEntry[]> {
+      return this.http.get<LeaderboardEntry[]>(`${this.apiUrl}leaderboard/getLeaderboard`)
   }
 }

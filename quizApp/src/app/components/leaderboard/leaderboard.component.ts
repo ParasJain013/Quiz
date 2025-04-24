@@ -17,17 +17,21 @@ export class LeaderboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.quizService.getLeaderboard()?.subscribe({
-      next: (res:any) => {
+      next: (res: LeaderboardEntry[]) => {
         console.log('Fetched leaderboard:', res);
 
-        // Sorting based on highest score
-        this.sortedEntries = res.sort((a:any, b:any) => {
-          if (b.highestScore !== a.highestScore) {
-            return b.highestScore - a.highestScore;
-          }
-          return new Date(b.latestScoreDate).getTime() - new Date(a.latestScoreDate).getTime();
-        });
-        console.log(this.sortedEntries)
+        if (!res || res.length === 0) {
+          this.sortedEntries = [];
+        } else {
+          // Sort by highest score, then latest attempt date
+          this.sortedEntries = res.sort((a, b) => {
+            if (b.highestScore !== a.highestScore) {
+              return b.highestScore - a.highestScore;
+            }
+            return Date.parse(b.latestScoreDate) - Date.parse(a.latestScoreDate);
+          });
+        }
+
         this.isLoading = false;
       },
       error: (err) => {
