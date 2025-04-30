@@ -33,15 +33,14 @@ const saveToLeaderboard = async (name, subject, score) => {
             await newEntry.save();
         }
     } catch (error) {
-        console.error('Error fetching subject questions:', error);
-        // res.status(500).json({ error: 'Internal Server Error' });
+        console.error('Internal Server Error', error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 };
 
 const fetchLeaderboardData = async (req, res) => {
     try {
         const leaderboardDoc = await Leaderboard.find({});
-        // console.log(leaderboardDoc);
         if (!leaderboardDoc) {
             res.status(200).json({ msg: 'No Data Found' })
         } else {

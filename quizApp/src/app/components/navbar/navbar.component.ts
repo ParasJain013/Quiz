@@ -1,14 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserService } from 'src/app/services/user.service';
-import { Router } from '@angular/router'; // 👈 Import Router
+import { Router, RouterLink } from '@angular/router'; // Import Router
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-navbar',
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.css'],
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   standalone: true,
 })
 export class NavbarComponent implements OnInit {
