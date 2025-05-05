@@ -2,4 +2,6 @@
 /quizAppBackend/node_modules
 
 /quizApp/src/environments
+/quizApp/.env.development
+/quizApp/.env.production
 /quizAppBackend/.env

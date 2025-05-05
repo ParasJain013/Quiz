@@ -32,7 +32,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   onNameChange(value: string) {
-    this.name = value;
+    this.name = value.trim();
   }
 
   get isNameInvalid(): boolean {
@@ -40,9 +40,9 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   onNextClick() {
-    const trimmedName = this.name.trim();
-    if (trimmedName) {
-      this.userService.setName(trimmedName);
+    // const trimmedName = this.name.trim();
+    if (this.name) {
+      this.userService.setName(this.name);
     }
   }
 

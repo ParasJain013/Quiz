@@ -2,14 +2,9 @@ const QuizSubject = require("../models/Questions");
 const { v4: uuidv4 } = require("uuid");
 const Leaderboard = require("../models/Leaderboard");
 const { saveToLeaderboard } = require("./leaderboardController");
-const enrichQuestionsWithIds = (questions) => {
-  return questions.map((q) => ({
-    ...q,
-    id: uuidv4(), // generate unique question ID
-  }));
-};
 
 
+//if collection of particular subject is already present then add the unique questions to the existing collection 
 const saveIndividualQuestion = async (req, res) => {
   try {
     const { name, questions } = req.body;
@@ -49,10 +44,12 @@ const bulkSaveQuizQuestion = async (req, res) => {
     const { name, questions } = req.body;
 
     const existing = await QuizSubject.findOne({ name });
+    //if collection a particular subject exists then add in the existing collection
     if (existing) {
       return saveIndividualQuestion(req, res);
     }
 
+    //otherwise create new collection
     const enrichedQuestions = enrichQuestionsWithIds(questions);
     const newSubject = new QuizSubject({ name, questions: enrichedQuestions });
     await newSubject.save();
@@ -125,7 +122,6 @@ const calculateAndSaveScore = async (req, res) => {
     });
 
     const total = easy + medium + hard;
-    // console.log("USER: ", user, "SUBJECT ",subject, "total ",total)
     await saveToLeaderboard(user, subject, total);
     return res.status(200).json({
       easy,
@@ -141,7 +137,13 @@ const calculateAndSaveScore = async (req, res) => {
   }
 };
 
-
+// to add uniques ids to questions
+const enrichQuestionsWithIds = (questions) => {
+  return questions.map((q) => ({
+    ...q,
+    id: uuidv4(), // generate unique question ID
+  }));
+};
 
 
 module.exports = { bulkSaveQuizQuestion, getSubjectQuestion, calculateAndSaveScore }
