@@ -40,9 +40,6 @@ export class QuizService {
   private leaderboardCache = new Map<number, LeaderboardEntry[]>(); // page-based cache
   private previousAttemptsCache: any[] | null = null;
   private isSubjectListFetched = false;
-  page = 1;
-  limit = 10;
-  // subjectList: SubjectType[] = ['History', 'Geography', 'GK'];
   questions: Question[] = [];
 
   constructor(private http: HttpClient) {}
@@ -72,7 +69,7 @@ export class QuizService {
   fetchSubjectQuestions(
     subject: SubjectType | null
   ): Observable<ApiResponse> | null {
-    console.log('Cached: ', this.cache);
+
     if (!subject) return null;
 
     // Check in-memory cache first

@@ -31,7 +31,6 @@ export class RegisterComponent
   onPasswordChange(value: string) {
     this.password = value;
     this.validPassword = this.passwordRegex.test(value);
-    console.log(value);
   }
   onNameChange(value: string) {
     this.name = value.trim();
@@ -42,13 +41,11 @@ export class RegisterComponent
         if (res.message == 'User registered successfully') {
           this.router.navigate(['/quiz']);
         }
-        console.log('in next: ', res.message);
       },
       error: (err) => {
         if (err.error.message == 'User_Already_Exist') {
           this.alreadyExist = true;
         }
-        console.log('in err: ', err);
       },
     });
   }

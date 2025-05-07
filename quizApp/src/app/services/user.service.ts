@@ -39,8 +39,6 @@ export class UserService {
       .split('; ')
       .find((row) => row.startsWith('token='))
       ?.split('=')[1];
-
-    console.log(token);
     if (token) return true;
 
     return false;

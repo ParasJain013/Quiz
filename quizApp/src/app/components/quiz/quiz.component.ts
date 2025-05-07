@@ -75,14 +75,12 @@ export class QuizComponent implements OnInit, OnDestroy {
   }
 
   onStartQuiz() {
-    console.log('SHOWQUIZ: ', this.showQuiz);
     this.loading = true;
     if (!this.showQuiz) {
       const sub = this.quizService
         .fetchSubjectQuestions(this.selectedSubject)
         ?.subscribe({
           next: (response) => {
-            console.log('API Response: ', response);
             this.quizService.questions = response.questions;
             this.quizMetadata = response.metadata;
             this.totalNoEachType = { ...this.quizMetadata };
@@ -98,7 +96,6 @@ export class QuizComponent implements OnInit, OnDestroy {
       if (sub) this.subscription = sub;
     }
     this.showQuiz = true;
-    console.log('SHOWQUIZ: ', this.showQuiz);
   }
   // handle next button click
   onNextClick() {
@@ -143,7 +140,6 @@ export class QuizComponent implements OnInit, OnDestroy {
       .submitQuiz(this.userAnswers, this.selectedSubject)
       .subscribe({
         next: (res) => {
-          console.log('Score submitted:', res);
           this.correctAnswersByDifficulty.easy = res.easy;
           this.correctAnswersByDifficulty.medium = res.medium;
           this.correctAnswersByDifficulty.hard = res.hard;

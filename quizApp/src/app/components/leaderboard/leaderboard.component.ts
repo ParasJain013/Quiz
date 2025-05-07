@@ -27,11 +27,10 @@ export class LeaderboardComponent implements OnInit {
     this.activeTab = tab;
     this.quizService.getPreviousAttempt()?.subscribe({
       next: (res: any) => {
-        console.log(res);
         this.prevAttempts = res.prevAttempts;
       },
       error: (err) => {
-        console.log(err);
+        console.error(err);
       },
     });
   }
@@ -46,7 +45,6 @@ export class LeaderboardComponent implements OnInit {
 
     this.quizService.getLeaderboard(this.currentPage, this.limit)?.subscribe({
       next: (res: any) => {
-        console.log(res);
         this.totalPages = res.totalPages;
         if (!res || res.data.length === 0) return;
 
@@ -56,7 +54,6 @@ export class LeaderboardComponent implements OnInit {
         this.isLoading = false;
       },
       error: (err) => {
-        console.log(err.error.message == 'INVALID_TOKEN');
         this.router.navigate(['/login']);
         console.error('Error loading leaderboard:', err);
         this.isLoading = false;

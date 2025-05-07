@@ -23,7 +23,6 @@ export class LoginComponent
 
   ngOnInit(): void {
     this.userService.checkLoginStatus().subscribe((state) => {
-      console.log('login: ', state);
       if (state.loggedIn) {
         this.router.navigate(['/quiz']);
       }
@@ -31,7 +30,6 @@ export class LoginComponent
   }
   onPasswordChange(value: string) {
     this.password = value;
-    console.log(value);
   }
   signIn() {
     this.userService.signIn(this.email, this.password).subscribe({

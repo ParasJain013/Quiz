@@ -22,7 +22,6 @@ export class NavbarComponent implements OnInit {
     });
 
     this.userService.checkLoginStatus().subscribe((state) => {
-      console.log('navbar :', state);
       if (!state.loggedIn) {
         this.router.navigate(['/login']);
       } else {
@@ -32,7 +31,6 @@ export class NavbarComponent implements OnInit {
   }
 
   handleLogout() {
-    console.log('Logout Button Clicked');
     this.userService.logout();
     this.router.navigate(['/login']);
     this.userService.updateLogoutDisplayState(false);
