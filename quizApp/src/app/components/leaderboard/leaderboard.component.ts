@@ -1,43 +1,73 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { QuizService, LeaderboardEntry } from '../../services/quiz.service';
-
+import { Router, RouterLink } from '@angular/router';
 @Component({
   selector: 'app-leaderboard',
   templateUrl: './leaderboard.component.html',
   styleUrls: ['./leaderboard.component.css'],
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   standalone: true,
 })
 export class LeaderboardComponent implements OnInit {
-  sortedEntries: LeaderboardEntry[] = [];
-  isLoading = true;
+  @ViewChild('scrollContainer') scrollContainer!: ElementRef;
 
-  constructor(private quizService: QuizService) {}
+  sortedEntries: LeaderboardEntry[] = [];
+  isLoading = false;
+  currentPage = 1;
+  totalPages = 1;
+  limit = 10;
+  activeTab: string = 'leaderboard';
+  prevAttempts: any = [];
 
   ngOnInit(): void {
-    this.quizService.getLeaderboard()?.subscribe({
-      next: (res: LeaderboardEntry[]) => {
-        console.log('Fetched leaderboard:', res);
+    this.loadMore();
+  }
+  switchTab(tab: string): void {
+    this.activeTab = tab;
+    this.quizService.getPreviousAttempt()?.subscribe({
+      next: (res: any) => {
+        console.log(res);
+        this.prevAttempts = res.prevAttempts;
+      },
+      error: (err) => {
+        console.log(err);
+      },
+    });
+  }
 
-        if (!res || res.length === 0) {
-          this.sortedEntries = [];
-        } else {
-          // Sort by highest score, then latest attempt date
-          this.sortedEntries = res.sort((a, b) => {
-            if (b.highestScore !== a.highestScore) {
-              return b.highestScore - a.highestScore;
-            }
-            return Date.parse(b.latestScoreDate) - Date.parse(a.latestScoreDate);
-          });
-        }
+  constructor(private quizService: QuizService, private router: Router) {}
 
+  loadMore(): void {
+    if (this.isLoading || this.currentPage > this.totalPages) return;
+
+    const container = this.scrollContainer?.nativeElement as HTMLElement;
+    this.isLoading = true;
+
+    this.quizService.getLeaderboard(this.currentPage, this.limit)?.subscribe({
+      next: (res: any) => {
+        console.log(res);
+        this.totalPages = res.totalPages;
+        if (!res || res.data.length === 0) return;
+
+        this.sortedEntries.push(...res.data);
+
+        this.currentPage++;
         this.isLoading = false;
       },
       error: (err) => {
+        console.log(err.error.message == 'INVALID_TOKEN');
+        this.router.navigate(['/login']);
         console.error('Error loading leaderboard:', err);
         this.isLoading = false;
-      }
+      },
     });
+  }
+
+  onScroll(event: Event) {
+    const element = event.target as HTMLElement;
+    if (element.scrollHeight - element.scrollTop <= element.clientHeight + 50) {
+      this.loadMore();
+    }
   }
 }

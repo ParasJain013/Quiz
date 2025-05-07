@@ -18,9 +18,7 @@ type Difficulty = 'easy' | 'medium' | 'hard';
   standalone: true,
 })
 export class QuizComponent implements OnInit, OnDestroy {
-  constructor(private quizService: QuizService) {
-    this.subjectList = this.quizService.subjectList;
-  }
+  constructor(private quizService: QuizService) {}
 
   subjectList: SubjectType[] = []; // all the subjects to be shown
   isHoveringOnDisabled = false; // tooltip on next button
@@ -63,6 +61,11 @@ export class QuizComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.quizService.fetchSubjectQuestions(null);
+    this.quizService.subjectListObservable$.subscribe((subjects) => {
+      this.subjectList = subjects;
+    });
+
+    this.quizService.fetchAllSubjects();
   }
 
   // when user selects a subject
@@ -89,7 +92,6 @@ export class QuizComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Error loading questions:', err);
-            // this.errorMessage = 'Failed to load questions. Please try again later.';
           },
         });
 
@@ -195,7 +197,6 @@ export class QuizComponent implements OnInit, OnDestroy {
     this.afterSubmit = false;
     this.timer = 600;
     clearInterval(this.intervalId);
-    // this.errorMessage = '';
   }
 
   // clean up subscriptions

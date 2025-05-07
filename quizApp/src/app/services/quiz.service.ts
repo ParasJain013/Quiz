@@ -2,7 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { environment } from '../environments/environment';
-import { shareReplay, tap } from 'rxjs';
+import { shareReplay, tap, BehaviorSubject } from 'rxjs';
+
 // Types
 export type SubjectType = 'History' | 'Geography' | 'GK';
 export type Difficulty = 'easy' | 'medium' | 'hard';
@@ -36,15 +37,42 @@ export interface ApiResponse {
 export class QuizService {
   private apiUrl = environment.apiUrl;
   private cache = new Map<SubjectType, ApiResponse>(); //  Using Map for caching
-
-  subjectList: SubjectType[] = ['History', 'Geography', 'GK'];
+  private leaderboardCache = new Map<number, LeaderboardEntry[]>(); // page-based cache
+  private previousAttemptsCache: any[] | null = null;
+  private isSubjectListFetched = false;
+  page = 1;
+  limit = 10;
+  // subjectList: SubjectType[] = ['History', 'Geography', 'GK'];
   questions: Question[] = [];
 
   constructor(private http: HttpClient) {}
 
+  // In QuizService
+
+  private subjectList$ = new BehaviorSubject<SubjectType[]>([]);
+  public readonly subjectListObservable$ = this.subjectList$.asObservable();
+
+  fetchAllSubjects(): void {
+    if (this.isSubjectListFetched) return;
+    this.http
+      .get<{ subjects: any }>(`${this.apiUrl}quiz/fetch-subjects`, {
+        withCredentials: true,
+      })
+      .subscribe({
+        next: (res) => {
+          this.subjectList$.next(res.subjects);
+        },
+        error: (err) => {
+          console.error('Failed to fetch subjects:', err);
+        },
+      });
+  }
+
   // When user selects subject
-  fetchSubjectQuestions(subject: SubjectType | null): Observable<ApiResponse> | null {
-    console.log("Cached: ",this.cache)
+  fetchSubjectQuestions(
+    subject: SubjectType | null
+  ): Observable<ApiResponse> | null {
+    console.log('Cached: ', this.cache);
     if (!subject) return null;
 
     // Check in-memory cache first
@@ -54,7 +82,10 @@ export class QuizService {
     }
 
     // If not in cache, fetch from API and cache it
-    return this.http.get<ApiResponse>(`${this.apiUrl}quiz/getQuestions?subject=${subject}`)
+    return this.http
+      .get<ApiResponse>(`${this.apiUrl}quiz/getQuestions?subject=${subject}`, {
+        withCredentials: true,
+      })
       .pipe(
         tap((data) => {
           this.cache.set(subject, data); // cache it inside Map
@@ -65,17 +96,52 @@ export class QuizService {
 
   // Submit quiz answers
   submitQuiz(userAnswers: any, subject: SubjectType): Observable<any> {
-    const name = localStorage.getItem('name');
-    if (!name) {
-      console.error('No user name found');
-    }
-    const body = { answers: userAnswers, subject, user: name };
-    return this.http.post<any>(`${this.apiUrl}quiz/submitQuiz`, body);
+    const body = { answers: userAnswers, subject };
+    return this.http.post<any>(`${this.apiUrl}quiz/submitQuiz`, body, {
+      withCredentials: true,
+    });
   }
 
   // Get leaderboard
-  getLeaderboard(): Observable<LeaderboardEntry[]> {
-    return this.http.get<LeaderboardEntry[]>(`${this.apiUrl}leaderboard/getLeaderboard`);
+  getLeaderboard(
+    page: number,
+    limit: number
+  ): Observable<{ data: LeaderboardEntry[]; totalPages: number }> {
+    if (this.leaderboardCache.has(page)) {
+      return of({
+        data: this.leaderboardCache.get(page)!,
+        totalPages: Math.ceil(this.leaderboardCache.size), // best guess
+      });
+    }
+
+    return this.http
+      .get<{ data: LeaderboardEntry[]; totalPages: number }>(
+        `${this.apiUrl}leaderboard/getLeaderboard?page=${page}&limit=${limit}`,
+        { withCredentials: true }
+      )
+      .pipe(
+        tap((res) => {
+          this.leaderboardCache.set(page, res.data);
+        }),
+        shareReplay(1)
+      );
+  }
+
+  // Cached previous attempts
+  getPreviousAttempt(): Observable<any> {
+    if (this.previousAttemptsCache) {
+      return of({ prevAttempts: this.previousAttemptsCache });
+    }
+
+    return this.http
+      .get<any>(`${this.apiUrl}attempt/previous-attempts`, {
+        withCredentials: true,
+      })
+      .pipe(
+        tap((res) => {
+          this.previousAttemptsCache = res.prevAttempts;
+        }),
+        shareReplay(1)
+      );
   }
 }
-
