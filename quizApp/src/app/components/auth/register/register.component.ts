@@ -22,8 +22,8 @@ export class RegisterComponent
   validPassword: boolean = true;
   alreadyExist: boolean = false;
   ngOnInit(): void {
-    this.userService.checkLoginStatus().subscribe((isLoggedIn) => {
-      if (isLoggedIn) {
+    this.userService.checkLoginStatus().subscribe((state) => {
+      if (state.loggedIn) {
         this.router.navigate(['/quiz']);
       }
     });

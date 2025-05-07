@@ -5,7 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 @Component({
   selector: 'app-leaderboard',
   templateUrl: './leaderboard.component.html',
-  styleUrls: ['./leaderboard.component.css'],
+  styleUrls: ['./leaderboard.component.scss'],
   imports: [CommonModule, RouterLink],
   standalone: true,
 })

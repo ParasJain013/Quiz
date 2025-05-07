@@ -11,7 +11,7 @@ import { AuthBaseComponent } from '../auth-base-component';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.css'],
+  styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent
   extends AuthBaseComponent

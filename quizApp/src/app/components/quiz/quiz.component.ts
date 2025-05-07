@@ -13,7 +13,7 @@ type Difficulty = 'easy' | 'medium' | 'hard';
 @Component({
   selector: 'app-quiz',
   templateUrl: './quiz.component.html',
-  styleUrls: ['./quiz.component.css'],
+  styleUrls: ['./quiz.component.scss'],
   imports: [CommonModule, RouterModule],
   standalone: true,
 })
