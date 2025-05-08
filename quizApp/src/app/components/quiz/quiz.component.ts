@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 import {
   QuizService,
@@ -18,7 +18,7 @@ type Difficulty = 'easy' | 'medium' | 'hard';
   standalone: true,
 })
 export class QuizComponent implements OnInit, OnDestroy {
-  constructor(private quizService: QuizService) {}
+  constructor(private quizService: QuizService, private route: ActivatedRoute, private router:Router) {}
 
   subjectList: SubjectType[] = []; // all the subjects to be shown
   isHoveringOnDisabled = false; // tooltip on next button
@@ -35,10 +35,20 @@ export class QuizComponent implements OnInit, OnDestroy {
   totalNoEachType = { easyCount: 0, mediumCount: 0, hardCount: 0 }; // total number of questions of each type
   quizMetadata = { easyCount: 0, mediumCount: 0, hardCount: 0 }; // copy of totalNoEachType . will decrement if a question is answered for each type, used to disable next button if all questions of current difficulty level not answered
   intervalId: any;
-  // errorMessage: string = ''; // error message to show if API fails
   subscription: Subscription | null = null;
   loading: Boolean = false;
 
+  ngOnInit(): void {
+    this.quizService.subjectList$.subscribe((list)=>{
+      this.subjectList = list
+    })
+    const loggedIn = this.route.snapshot.data['isLoggedIn'];
+    if(loggedIn){
+      this.router.navigate(['/quiz']);
+    }
+
+    this.quizService.fetchAllSubjects();
+  }
   // format timer string
   get formattedTime(): string {
     const minutes = Math.floor(this.timer / 60);
@@ -59,14 +69,7 @@ export class QuizComponent implements OnInit, OnDestroy {
     }, 1000);
   }
 
-  ngOnInit(): void {
-    this.quizService.fetchSubjectQuestions(null);
-    this.quizService.subjectListObservable$.subscribe((subjects) => {
-      this.subjectList = subjects;
-    });
 
-    this.quizService.fetchAllSubjects();
-  }
 
   // when user selects a subject
   onSubjectSelect(subject: SubjectType) {

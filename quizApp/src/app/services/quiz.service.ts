@@ -46,8 +46,8 @@ export class QuizService {
 
   // In QuizService
 
-  private subjectList$ = new BehaviorSubject<SubjectType[]>([]);
-  public readonly subjectListObservable$ = this.subjectList$.asObservable();
+  subjectList$ = new BehaviorSubject<SubjectType[]>([]);
+  // public readonly subjectListObservable$ = this.subjectList$.asObservable();
 
   fetchAllSubjects(): void {
     if (this.isSubjectListFetched) return;

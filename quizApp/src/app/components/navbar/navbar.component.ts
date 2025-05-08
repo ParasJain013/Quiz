@@ -12,21 +12,12 @@ import { Subscription } from 'rxjs';
   standalone: true,
 })
 export class NavbarComponent implements OnInit {
-  // nameSubscription!: Subscription;
   displayLogout = false;
   constructor(private userService: UserService, private router: Router) {}
 
-  ngOnInit(): void {
+  ngOnInit(): void {    
     this.userService.displayLogout$.subscribe((val) => {
       this.displayLogout = val;
-    });
-
-    this.userService.checkLoginStatus().subscribe((state) => {
-      if (!state.loggedIn) {
-        this.router.navigate(['/login']);
-      } else {
-        this.userService.updateLogoutDisplayState(true);
-      }
     });
   }
 

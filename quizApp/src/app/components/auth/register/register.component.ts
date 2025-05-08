@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule, Router, RouterLink } from '@angular/router';
+import { RouterModule, Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { UserService } from 'src/app/services/user.service';
 import { AuthBaseComponent } from '../auth-base-component';
 @Component({
@@ -11,22 +11,18 @@ import { AuthBaseComponent } from '../auth-base-component';
   styleUrls: ['./register.component.scss'],
   imports: [CommonModule, FormsModule, RouterModule, RouterLink],
 })
-export class RegisterComponent
-  extends AuthBaseComponent
-  implements OnInit, OnDestroy
-{
-  constructor(private userService: UserService, private router: Router) {
+export class RegisterComponent extends AuthBaseComponent implements OnInit {
+  constructor(private userService: UserService, private router: Router, private route: ActivatedRoute) {
     super();
   }
   passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
   validPassword: boolean = true;
   alreadyExist: boolean = false;
   ngOnInit(): void {
-    this.userService.checkLoginStatus().subscribe((state) => {
-      if (state.loggedIn) {
-        this.router.navigate(['/quiz']);
-      }
-    });
+    const loggedIn = this.route.snapshot.data['isLoggedIn'];
+    if (loggedIn) {
+      this.router.navigate(['/quiz']);
+    }
   }
   onPasswordChange(value: string) {
     this.password = value;
@@ -48,9 +44,5 @@ export class RegisterComponent
         }
       },
     });
-  }
-
-  ngOnDestroy(): void {
-    this.nameSubscription?.unsubscribe();
   }
 }
