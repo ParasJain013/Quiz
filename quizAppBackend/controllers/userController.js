@@ -46,9 +46,9 @@ const signup = async (req, res) => {
       httpOnly: false,
       secure: true, 
       sameSite: 'Strict', 
-      maxAge: 7200000 // 1 hour
+      maxAge: 7200000 // 2 hour
     });
-    return res.status(201).json({ message: 'User registered successfully' });
+    return res.status(201).json({ message: 'User_registered_successfully' });
   } catch (error) {
     console.error(error)
     let msg = error.errors.email.properties.message;

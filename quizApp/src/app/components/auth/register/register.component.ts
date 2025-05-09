@@ -19,10 +19,6 @@ export class RegisterComponent extends AuthBaseComponent implements OnInit {
   validPassword: boolean = true;
   alreadyExist: boolean = false;
   ngOnInit(): void {
-    const loggedIn = this.route.snapshot.data['isLoggedIn'];
-    if (loggedIn) {
-      this.router.navigate(['/quiz']);
-    }
   }
   onPasswordChange(value: string) {
     this.password = value;
@@ -34,8 +30,8 @@ export class RegisterComponent extends AuthBaseComponent implements OnInit {
   signUp() {
     this.userService.signUp(this.name, this.email, this.password).subscribe({
       next: (res) => {
-        if (res.message == 'User registered successfully') {
-          this.router.navigate(['/quiz']);
+        if (res.message == 'User_registered_successfully') {
+          this.userService.afterSuccessfullLogin()
         }
       },
       error: (err) => {

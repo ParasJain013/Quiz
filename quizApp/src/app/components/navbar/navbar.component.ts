@@ -23,7 +23,7 @@ export class NavbarComponent implements OnInit {
 
   handleLogout() {
     this.userService.logout();
-    this.router.navigate(['/login']);
+    // this.router.navigate(['/login']);
     this.userService.updateLogoutDisplayState(false);
   }
 }

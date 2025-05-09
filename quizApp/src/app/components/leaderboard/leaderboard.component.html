@@ -1,18 +1,19 @@
 <div class="container mt-5">
   <div class="d-flex">
 
-    <h2 class="m-2 p-2 text-center text-md-start tab-header" [class.active-tab]="activeTab === 'leaderboard'"
+    <h2 role="button" class="btn m-2 p-2 text-center text-md-start tab-header cursor-pointer" [class.active-tab]="activeTab === 'leaderboard'"
       (click)="switchTab('leaderboard')" [ngClass]="{'text-white bg-dark' :activeTab === 'leaderboard'}">
       Leaderboard
     </h2>
-    <h2 class="m-2 p-2 text-center text-md-start tab-header" [class.active-tab]="activeTab === 'scores'"
+    <h2 role="button" class="btn m-2 p-2 text-center text-md-start tab-header cursor-pointer" [class.active-tab]="activeTab === 'scores'"
       (click)="switchTab('scores')" [ngClass]="{'text-white bg-dark' :activeTab === 'scores'}">
       Your Scores
     </h2>
   </div>
-  <div #scrollContainer style="height: 60vh; overflow-y: auto;" (scroll)="onScroll($event)" class="scroll-container">
+  <!-- <div #scrollContainer style="height: 60vh; overflow-y: auto;" (scroll)="onScroll($event)" class="scroll-container"> -->
+  <div>
     <!-- If Leaderboard is to be shown -->
-    <div *ngIf="activeTab=='leaderboard'">
+    <div *ngIf="activeTab=='leaderboard'" style="height: 70vh; overflow-y: auto;"  #scrollContainer (scroll)="onScroll($event)" class="scroll-container">
       <div class="table-responsive d-none d-md-block">
         <table class="table table-striped table-hover align-middle">
           <thead class="table-dark">
@@ -93,7 +94,7 @@
       </div>
     </div>
     <!-- if user's previous attempt is to be shown -->
-    <div *ngIf="activeTab === 'scores'" class="p-3">
+    <div *ngIf="activeTab === 'scores'" style="height: 70vh; overflow-y: auto;" class="p-3">
       <div class="d-none d-md-block">
         <!-- Desktop Table -->
         <table class="table table-striped table-hover align-middle">

@@ -22,10 +22,10 @@ export class LoginComponent
   }
 
   ngOnInit(): void {
-    const loggedIn = this.route.snapshot.data['isLoggedIn'];
-    if(loggedIn){
-      this.router.navigate(['/quiz']);
-    }
+    // const loggedIn = this.route.snapshot.data['isLoggedIn'];
+    // if(loggedIn){
+    //   this.router.navigate(['/quiz']);
+    // }
   }
   onPasswordChange(value: string) {
     this.password = value;
@@ -34,12 +34,7 @@ export class LoginComponent
     this.userService.signIn(this.email, this.password).subscribe({
       next: (res) => {
         if (res.message === 'successfull') {
-          this.userService.updateLogoutDisplayState(true);
-          
-          this.userService.cachedLoginStatus = true;
-          this.userService.loginStatusFetched = true;
-  
-          this.router.navigate(['/quiz']);
+          this.userService.afterSuccessfullLogin()
         }
       },
       error: (err) => {

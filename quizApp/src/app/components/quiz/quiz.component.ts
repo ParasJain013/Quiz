@@ -37,18 +37,11 @@ export class QuizComponent implements OnInit, OnDestroy {
   intervalId: any;
   subscription: Subscription | null = null;
   loading: Boolean = false;
-
+  
   ngOnInit(): void {
-    this.quizService.subjectList$.subscribe((list)=>{
-      this.subjectList = list
-    })
-    const loggedIn = this.route.snapshot.data['isLoggedIn'];
-    if(loggedIn){
-      this.router.navigate(['/quiz']);
+      const data = this.route.snapshot.data['subjectList']
+      this.subjectList = data.subjects;
     }
-
-    this.quizService.fetchAllSubjects();
-  }
   // format timer string
   get formattedTime(): string {
     const minutes = Math.floor(this.timer / 60);
@@ -85,8 +78,8 @@ export class QuizComponent implements OnInit, OnDestroy {
         ?.subscribe({
           next: (response) => {
             this.quizService.questions = response.questions;
-            this.quizMetadata = response.metadata;
-            this.totalNoEachType = { ...this.quizMetadata };
+            this.quizMetadata = Object.assign({}, response.metadata);
+            this.totalNoEachType = Object.assign({}, response.metadata);
             this.loading = false;
             this.startTimer();
             this.loadQuestions();

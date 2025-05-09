@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { catchError, Observable, of, throwError } from 'rxjs';
 import { environment } from '../environments/environment';
 import { shareReplay, tap, BehaviorSubject } from 'rxjs';
+import { Router } from '@angular/router';
 
 // Types
 export type SubjectType = 'History' | 'Geography' | 'GK';
@@ -42,40 +43,47 @@ export class QuizService {
   private isSubjectListFetched = false;
   questions: Question[] = [];
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private router: Router) {}
+  subjectList = [];
 
-  // In QuizService
 
-  subjectList$ = new BehaviorSubject<SubjectType[]>([]);
-  // public readonly subjectListObservable$ = this.subjectList$.asObservable();
-
-  fetchAllSubjects(): void {
-    if (this.isSubjectListFetched) return;
-    this.http
-      .get<{ subjects: any }>(`${this.apiUrl}quiz/fetch-subjects`, {
-        withCredentials: true,
+  fetchAllSubjects(): Observable<any> {
+    if (this.isSubjectListFetched) {
+      return of({subjects:this.subjectList}); 
+    }
+  
+    return this.http.get<{ subjects: any }>(
+      `${this.apiUrl}quiz/fetch-subjects`,
+      { withCredentials: true }
+    ).pipe(
+      tap((res) => {
+        this.isSubjectListFetched = true;
+        this.subjectList = res.subjects;
+      }),
+      catchError((err) => {
+        console.error('Failed to fetch subjects:', err);
+        if (err.error?.message === 'INVALID_TOKEN') {
+          this.router.navigate(['/login']);
+        }
+        return throwError(() => err);
       })
-      .subscribe({
-        next: (res) => {
-          this.subjectList$.next(res.subjects);
-        },
-        error: (err) => {
-          console.error('Failed to fetch subjects:', err);
-        },
-      });
+    );
   }
+  
 
+  setSubjects(subjects:any) {
+    this.subjectList = subjects.subjects;
+  }
   // When user selects subject
   fetchSubjectQuestions(
     subject: SubjectType | null
   ): Observable<ApiResponse> | null {
-
     if (!subject) return null;
 
     // Check in-memory cache first
     if (this.cache.has(subject)) {
       const cachedResponse = this.cache.get(subject)!;
-      return of(cachedResponse); // `of()` creates an observable from the cached value
+      return of(cachedResponse);
     }
 
     // If not in cache, fetch from API and cache it
@@ -107,7 +115,7 @@ export class QuizService {
     if (this.leaderboardCache.has(page)) {
       return of({
         data: this.leaderboardCache.get(page)!,
-        totalPages: Math.ceil(this.leaderboardCache.size), // best guess
+        totalPages: Math.ceil(this.leaderboardCache.size),
       });
     }
 

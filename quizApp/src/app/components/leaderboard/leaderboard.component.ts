@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { QuizService, LeaderboardEntry } from '../../services/quiz.service';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+
+
 @Component({
   selector: 'app-leaderboard',
   templateUrl: './leaderboard.component.html',
@@ -14,57 +16,61 @@ export class LeaderboardComponent implements OnInit {
 
   sortedEntries: LeaderboardEntry[] = [];
   isLoading = false;
-  currentPage = 1;
+  currentPage = 2;              // next page to load
   totalPages = 1;
   limit = 10;
   activeTab: string = 'leaderboard';
   prevAttempts: any = [];
 
-  ngOnInit(): void {
-    this.loadMore();
-  }
-  switchTab(tab: string): void {
-    this.activeTab = tab;
-    this.quizService.getPreviousAttempt()?.subscribe({
-      next: (res: any) => {
-        this.prevAttempts = res.prevAttempts;
-      },
-      error: (err) => {
-        console.error(err);
-      },
-    });
-  }
+  constructor(
+    private quizService: QuizService,
+    private router: Router,
+    private route: ActivatedRoute
+  ) {}
 
-  constructor(private quizService: QuizService, private router: Router) {}
+  ngOnInit(): void {
+    // pull the preloaded page from the resolver:
+    const pageData = this.route.snapshot.data['leaderboardPage'] as {
+      data: LeaderboardEntry[];
+      totalPages: number;
+    };
+    this.sortedEntries = pageData.data;
+    this.totalPages = pageData.totalPages;
+  }
 
   loadMore(): void {
     if (this.isLoading || this.currentPage > this.totalPages) return;
-
-    const container = this.scrollContainer?.nativeElement as HTMLElement;
     this.isLoading = true;
 
-    this.quizService.getLeaderboard(this.currentPage, this.limit)?.subscribe({
-      next: (res: any) => {
-        this.totalPages = res.totalPages;
-        if (!res || res.data.length === 0) return;
-
-        this.sortedEntries.push(...res.data);
-
-        this.currentPage++;
-        this.isLoading = false;
-      },
-      error: (err) => {
-        this.router.navigate(['/login']);
-        console.error('Error loading leaderboard:', err);
-        this.isLoading = false;
-      },
-    });
+    this.quizService.getLeaderboard(this.currentPage, this.limit)
+      .subscribe({
+        next: (res) => {
+          this.sortedEntries.push(...res.data);
+          this.currentPage++;
+          this.isLoading = false;
+        },
+        error: (err) => {
+          console.error('Error loading leaderboard:', err);
+          this.router.navigate(['/login']);
+          this.isLoading = false;
+        },
+      });
   }
 
   onScroll(event: Event) {
-    const element = event.target as HTMLElement;
-    if (element.scrollHeight - element.scrollTop <= element.clientHeight + 50) {
+    const el = (event.target as HTMLElement);
+    if (el.scrollHeight - el.scrollTop <= el.clientHeight + 50) {
       this.loadMore();
+    }
+  }
+
+  switchTab(tab: string): void {
+    this.activeTab = tab;
+    if (tab === 'scores') {
+      this.quizService.getPreviousAttempt()?.subscribe({
+        next: (res: any) => (this.prevAttempts = res.prevAttempts),
+        error: (err) => console.error(err),
+      });
     }
   }
 }
