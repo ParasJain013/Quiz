@@ -22,10 +22,6 @@ export class LoginComponent
   }
 
   ngOnInit(): void {
-    // const loggedIn = this.route.snapshot.data['isLoggedIn'];
-    // if(loggedIn){
-    //   this.router.navigate(['/quiz']);
-    // }
   }
   onPasswordChange(value: string) {
     this.password = value;

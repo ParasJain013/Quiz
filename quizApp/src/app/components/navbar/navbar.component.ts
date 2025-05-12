@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserService } from 'src/app/services/user.service';
 import { Router, RouterLink } from '@angular/router'; // Import Router
-import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-navbar',
@@ -23,7 +22,6 @@ export class NavbarComponent implements OnInit {
 
   handleLogout() {
     this.userService.logout();
-    // this.router.navigate(['/login']);
     this.userService.updateLogoutDisplayState(false);
   }
 }

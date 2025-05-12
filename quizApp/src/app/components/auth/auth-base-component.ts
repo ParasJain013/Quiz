@@ -15,8 +15,4 @@ export abstract class AuthBaseComponent {
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     this.validEmail = emailPattern.test(this.email);
   }
-
-  // get isNameInvalid(): boolean {
-  //   return !this.name.trim();
-  // }
 }

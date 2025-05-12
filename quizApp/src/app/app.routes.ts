@@ -3,7 +3,6 @@ import { LoginComponent } from './components/auth/login/login.component';
 import { QuizComponent } from './components/quiz/quiz.component';
 import { LeaderboardComponent } from './components/leaderboard/leaderboard.component';
 import { RegisterComponent } from './components/auth/register/register.component';
-import { LoginStatusResolver } from './resolvers/login-status.resolver';
 import { QuizResolver } from './resolvers/quiz.resolver';
 import { authGuard } from './services/auth.guard';
 import { LeaderboardResolver } from './resolvers/leaderboard.resolver';

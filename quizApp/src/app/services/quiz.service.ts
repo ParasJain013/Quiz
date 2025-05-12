@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, Observable, of, throwError } from 'rxjs';
 import { environment } from '../environments/environment';
-import { shareReplay, tap, BehaviorSubject } from 'rxjs';
+import { shareReplay, tap } from 'rxjs';
 import { Router } from '@angular/router';
 
 // Types

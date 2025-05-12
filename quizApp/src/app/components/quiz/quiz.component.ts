@@ -142,7 +142,6 @@ export class QuizComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Error submitting score:', err);
-          // this.errorMessage = 'Failed to submit quiz. Please try again later.';
         },
       });
 
