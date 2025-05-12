@@ -10,7 +10,6 @@
       Your Scores
     </h2>
   </div>
-  <!-- <div #scrollContainer style="height: 60vh; overflow-y: auto;" (scroll)="onScroll($event)" class="scroll-container"> -->
   <div>
     <!-- If Leaderboard is to be shown -->
     <div *ngIf="activeTab=='leaderboard'" style="height: 70vh; overflow-y: auto;"  #scrollContainer (scroll)="onScroll($event)" class="scroll-container">
@@ -134,8 +133,9 @@
       <div class="d-md-none">
         <div *ngFor="let attempt of prevAttempts" class="card mb-3 shadow-sm">
           <div class="card-header bg-light">
-            <h5 class="card-title mb-0">
+            <h5 class="d-flex justify-content-between card-title mb-0">
               <span class="badge bg-primary">{{attempt.subject}}</span>
+              <span class="badge bg-primary">{{attempt.time | date:'dd MMM yyyy, hh:mm a'}}</span>
             </h5>
           </div>
           <div class="card-body">
