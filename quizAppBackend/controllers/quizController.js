@@ -1,15 +1,9 @@
 const QuizSubject = require("../models/Questions");
 const { v4: uuidv4 } = require("uuid");
-const Leaderboard = require("../models/Leaderboard");
 const { saveToLeaderboard } = require("./leaderboardController");
-const enrichQuestionsWithIds = (questions) => {
-  return questions.map((q) => ({
-    ...q,
-    id: uuidv4(), // generate unique question ID
-  }));
-};
+const { addToPrevAttempts } = require("./attemptsController");
 
-
+//if collection of particular subject is already present then add the unique questions to the existing collection 
 const saveIndividualQuestion = async (req, res) => {
   try {
     const { name, questions } = req.body;
@@ -49,10 +43,12 @@ const bulkSaveQuizQuestion = async (req, res) => {
     const { name, questions } = req.body;
 
     const existing = await QuizSubject.findOne({ name });
+    //if collection a particular subject exists then add in the existing collection
     if (existing) {
       return saveIndividualQuestion(req, res);
     }
 
+    //otherwise create new collection
     const enrichedQuestions = enrichQuestionsWithIds(questions);
     const newSubject = new QuizSubject({ name, questions: enrichedQuestions });
     await newSubject.save();
@@ -67,7 +63,7 @@ const bulkSaveQuizQuestion = async (req, res) => {
 const getSubjectQuestion = async (req, res) => {
   try {
     const subject = req.query.subject;
-    let metadata = {easyCount:0,mediumCount:0,hardCount:0}
+    let metadata = { easyCount: 0, mediumCount: 0, hardCount: 0 }
     if (!subject) {
       return res.status(400).json({ error: 'Subject is required in query params.' });
     }
@@ -77,14 +73,14 @@ const getSubjectQuestion = async (req, res) => {
     if (!subjectDoc) {
       return res.status(404).json({ error: 'Subject not found in database.' });
     }
-    subjectDoc.questions.forEach((q)=>{
-      if(q.difficulty == 'easy'){
+    subjectDoc.questions.forEach((q) => {
+      if (q.difficulty == 'easy') {
         metadata.easyCount++;
       }
-      else if(q.difficulty == 'medium'){
+      else if (q.difficulty == 'medium') {
         metadata.mediumCount++;
       }
-      if(q.difficulty == 'hard'){
+      if (q.difficulty == 'hard') {
         metadata.hardCount++;
       }
     })
@@ -96,6 +92,17 @@ const getSubjectQuestion = async (req, res) => {
   }
 };
 
+const fetchAllSubjects = async (req, res) => {
+  try {
+    const subjects = await QuizSubject.find({}, 'name');
+    const subjectNames = subjects.map(subject => subject.name);
+    res.status(200).json({ subjects: subjectNames });
+  } catch (err) {
+    console.error('Error fetching subject names:', err);
+    res.status(400).json({ message: "FAILED" });
+  }
+};
+
 
 
 const calculateAndSaveScore = async (req, res) => {
@@ -103,12 +110,13 @@ const calculateAndSaveScore = async (req, res) => {
     let easy = 0, medium = 0, hard = 0;
     const { subject, answers, user } = req.body;
 
-    if (!subject || !answers || typeof answers !== 'object' || !user) {
+    const { username, userId, email } = req.user
+
+    if (!subject || !answers || typeof answers !== 'object' || !username) {
       return res.status(400).json({ error: 'Subject, answers and user are required.' });
     }
 
     const subjectDoc = await QuizSubject.findOne({ name: subject });
-
     if (!subjectDoc) {
       return res.status(404).json({ error: 'Subject not found in database.' });
     }
@@ -125,14 +133,13 @@ const calculateAndSaveScore = async (req, res) => {
     });
 
     const total = easy + medium + hard;
-    // console.log("USER: ", user, "SUBJECT ",subject, "total ",total)
-    await saveToLeaderboard(user, subject, total);
+
+    await saveToLeaderboard(username, subject, total);
+    await addToPrevAttempts(email, subject, { easy, medium, hard, total });
+
     return res.status(200).json({
-      easy,
-      medium,
-      hard,
-      total,
-      message: 'Score calculated successfully',
+      easy, medium, hard, total,
+      message: 'Score calculated and saved successfully'
     });
 
   } catch (error) {
@@ -142,6 +149,13 @@ const calculateAndSaveScore = async (req, res) => {
 };
 
 
+// to add uniques ids to questions
+const enrichQuestionsWithIds = (questions) => {
+  return questions.map((q) => ({
+    ...q,
+    id: uuidv4(), // generate unique question ID
+  }));
+};
 
 
-module.exports = { bulkSaveQuizQuestion, getSubjectQuestion, calculateAndSaveScore }
+module.exports = { bulkSaveQuizQuestion, getSubjectQuestion, calculateAndSaveScore, fetchAllSubjects }

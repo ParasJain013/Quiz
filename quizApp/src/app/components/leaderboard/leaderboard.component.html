@@ -1,121 +1,181 @@
 <div class="container mt-5">
-  <h2 class="mb-4 text-center text-md-start">Leaderboard</h2>
+  <div class="d-flex">
 
-  <div *ngIf="isLoading" class="text-center">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
+    <h2 role="button" class="btn m-2 p-2 text-center text-md-start tab-header cursor-pointer" [class.active-tab]="activeTab === 'leaderboard'"
+      (click)="switchTab('leaderboard')" [ngClass]="{'text-white bg-dark' :activeTab === 'leaderboard'}">
+      Leaderboard
+    </h2>
+    <h2 role="button" class="btn m-2 p-2 text-center text-md-start tab-header cursor-pointer" [class.active-tab]="activeTab === 'scores'"
+      (click)="switchTab('scores')" [ngClass]="{'text-white bg-dark' :activeTab === 'scores'}">
+      Your Scores
+    </h2>
   </div>
+  <div>
+    <!-- If Leaderboard is to be shown -->
+    <div *ngIf="activeTab=='leaderboard'" style="height: 70vh; overflow-y: auto;"  #scrollContainer (scroll)="onScroll($event)" class="scroll-container">
+      <div class="table-responsive d-none d-md-block">
+        <table class="table table-striped table-hover align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Subject</th>
+              <th>Best Score</th>
+              <th>Latest Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of sortedEntries; let i = index">
+              <td>
+                {{ i + 1 }}
+              </td>
+              <td>
+                <ng-container [ngSwitch]="i">
+                  <span *ngSwitchCase="0">
+                    {{ entry.name }}
+                    <img src="../../../assets/goldMedal.svg" alt="Gold Medal"
+                      style="height: 25px; vertical-align: middle" />
+                  </span>
+                  <span *ngSwitchCase="1">
+                    {{ entry.name }}
+                    <img src="../../../assets/silverMedal.svg" alt="Silver Medal"
+                      style="height: 25px; vertical-align: middle" />
+                  </span>
+                  <span *ngSwitchCase="2">
+                    {{ entry.name }}
+                    <img src="../../../assets/bronzeMedal.svg" alt="Bronze Medal"
+                      style="height: 25px; vertical-align: middle" />
+                  </span>
+                  <span *ngSwitchDefault>{{ entry.name }}</span>
+                </ng-container>
+              </td>
+              <td>
+                <span class="badge bg-secondary">{{ entry.subject }}</span>
+              </td>
+              <td>{{ entry.highestScore }}</td>
+              <td>{{ entry.latestScore }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="d-md-none">
+        <div *ngFor="let entry of sortedEntries; let i = index" class="card mb-3 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title mb-2">
+              <strong>
+                <ng-container [ngSwitch]="i">
+                  <span *ngSwitchCase="0"><img src="../../../assets/goldMedal.svg"
+                      style="height: 25px; vertical-align: middle" /></span>
+                  <span *ngSwitchCase="1"><img src="../../../assets/silverMedal.svg"
+                      style="height: 25px; vertical-align: middle" /></span>
+                  <span *ngSwitchCase="2"><img src="../../../assets/bronzeMedal.svg"
+                      style="height: 25px; vertical-align: middle" /></span>
+                  <span *ngSwitchDefault>#{{ i + 1 }}</span>
+                </ng-container>
+              </strong>
+              - {{ entry.name }}
+            </h5>
 
-  <div *ngIf="!isLoading">
-    <!-- Table view for md and up -->
-    <div class="table-responsive d-none d-md-block">
-      <table class="table table-striped table-hover align-middle">
-        <thead class="table-dark">
-          <tr>
-            <th>Rank</th>
-            <th>Name</th>
-            <th>Subject</th>
-            <th>Best Score</th>
-            <th>Latest Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let entry of sortedEntries; let i = index">
-            <td>
-              {{ i + 1 }}
-            </td>
-            <td>
-              <ng-container [ngSwitch]="i">
-                <span *ngSwitchCase="0">
-                  {{ entry.name }}
-                  <img
-                    src="../../../assets/goldMedal.svg"
-                    alt="Gold Medal"
-                    style="height: 25px; vertical-align: middle"
-                  />
-                </span>
-                <span *ngSwitchCase="1">
-                  {{ entry.name }}
-                  <img
-                    src="../../../assets/silverMedal.svg"
-                    alt="Silver Medal"
-                    style="height: 25px; vertical-align: middle"
-                  />
-                </span>
-                <span *ngSwitchCase="2">
-                  {{ entry.name }}
-                  <img
-                    src="../../../assets/bronzeMedal.svg"
-                    alt="Bronze Medal"
-                    style="height: 25px; vertical-align: middle"
-                  />
-                </span>
-                <span *ngSwitchDefault>{{ entry.name }}</span>
-              </ng-container>
-            </td>
-            <td>
-              <span class="badge bg-secondary">{{ entry.subject }}</span>
-            </td>
-            <td>{{ entry.highestScore }}</td>
-            <td>{{ entry.latestScore }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+            <p class="mb-1">
+              <strong>Subject:</strong>
+              <span class="badge bg-secondary mx-1">{{ entry.subject }}</span>
+            </p>
 
-    <!-- Card view for small screens -->
-    <div class="d-md-none">
-      <div
-        *ngFor="let entry of sortedEntries; let i = index"
-        class="card mb-3 shadow-sm"
-      >
-        <div class="card-body">
-          <h5 class="card-title mb-2">
-            <strong>
-              <ng-container [ngSwitch]="i">
-                <span *ngSwitchCase="0"
-                  ><img
-                    src="../../../assets/goldMedal.svg"
-                    style="height: 25px; vertical-align: middle"
-                /></span>
-                <span *ngSwitchCase="1"
-                  ><img
-                    src="../../../assets/silverMedal.svg"
-                    style="height: 25px; vertical-align: middle"
-                /></span>
-                <span *ngSwitchCase="2"
-                  ><img
-                    src="../../../assets/bronzeMedal.svg"
-                    style="height: 25px; vertical-align: middle"
-                /></span>
-                <span *ngSwitchDefault>#{{ i + 1 }}</span>
-              </ng-container>
-            </strong>
-            - {{ entry.name }}
-          </h5>
+            <p class="mb-1">
+              <strong>Best Score:</strong> {{ entry.highestScore }}
+            </p>
 
-          <p class="mb-1">
-            <strong>Subject:</strong>
-            <span class="badge bg-secondary mx-1">{{ entry.subject }}</span>
-          </p>
-
-          <p class="mb-1">
-            <strong>Best Score:</strong> {{ entry.highestScore }}
-          </p>
-
-          <p class="mb-1">
-            <strong>Latest Score:</strong> {{ entry.latestScore }}
-          </p>
+            <p class="mb-1">
+              <strong>Latest Score:</strong> {{ entry.latestScore }}
+            </p>
+          </div>
         </div>
       </div>
     </div>
+    <!-- if user's previous attempt is to be shown -->
+    <div *ngIf="activeTab === 'scores'" style="height: 70vh; overflow-y: auto;" class="p-3">
+      <div class="d-none d-md-block">
+        <!-- Desktop Table -->
+        <table class="table table-striped table-hover align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th>Time</th>
+              <th>Subject</th>
+              <th>Total</th>
+              <th>Easy</th>
+              <th>Medium</th>
+              <th>Hard</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let attempt of prevAttempts" class="align-middle">
+              <td>
+                <span class="fs-6">{{attempt.time | date:'dd MMM yyyy, hh:mm a'}}</span>
+              </td>
+              <td>
+                <span class="badge bg-primary fs-6">{{attempt.subject}}</span>
+              </td>
+              <td class=" fs-5">{{attempt.stats.total}}</td>
+              <td>
+                <span class="badge bg-success fs-6">{{attempt.stats.easy}}</span>
+              </td>
+              <td>
+                <span class="badge bg-warning text-dark fs-6">{{attempt.stats.medium}}</span>
+              </td>
+              <td>
+                <span class="badge bg-danger fs-6">{{attempt.stats.hard}}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Mobile Cards -->
+      <div class="d-md-none">
+        <div *ngFor="let attempt of prevAttempts" class="card mb-3 shadow-sm">
+          <div class="card-header bg-light">
+            <h5 class="d-flex justify-content-between card-title mb-0">
+              <span class="badge bg-primary">{{attempt.subject}}</span>
+              <span class="badge bg-primary">{{attempt.time | date:'dd MMM yyyy, hh:mm a'}}</span>
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-2 text-center">
+              <div class="col-6">
+                <div class="bg-light p-2 rounded">
+                  <div class="text-muted small">Total</div>
+                  <div class="fs-5 fw-bold">{{attempt.stats.total}}</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="bg-light p-2 rounded">
+                  <div class="text-muted small">Easy</div>
+                  <div class="fs-5 fw-bold text-success">{{attempt.stats.easy}}</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="bg-light p-2 rounded">
+                  <div class="text-muted small">Medium</div>
+                  <div class="fs-5 fw-bold text-warning">{{attempt.stats.medium}}</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="bg-light p-2 rounded">
+                  <div class="text-muted small">Hard</div>
+                  <div class="fs-5 fw-bold text-danger">{{attempt.stats.hard}}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="isLoading" class="text-center">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
     <!-- if there's no record then show info -->
-    <div
-      *ngIf="sortedEntries.length === 0"
-      class="alert alert-info text-center"
-    >
+    <div *ngIf="sortedEntries.length === 0" class="alert alert-info text-center">
       No quiz attempts recorded yet.
     </div>
   </div>
-</div>

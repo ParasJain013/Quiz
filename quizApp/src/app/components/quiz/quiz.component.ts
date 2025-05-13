@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 import {
   QuizService,
@@ -13,21 +13,19 @@ type Difficulty = 'easy' | 'medium' | 'hard';
 @Component({
   selector: 'app-quiz',
   templateUrl: './quiz.component.html',
-  styleUrls: ['./quiz.component.css'],
+  styleUrls: ['./quiz.component.scss'],
   imports: [CommonModule, RouterModule],
   standalone: true,
 })
 export class QuizComponent implements OnInit, OnDestroy {
-  constructor(private quizService: QuizService) {
-    this.subjectList = this.quizService.subjectList;
-  }
+  constructor(private quizService: QuizService, private route: ActivatedRoute, private router:Router) {}
 
   subjectList: SubjectType[] = []; // all the subjects to be shown
   isHoveringOnDisabled = false; // tooltip on next button
   correctAnswersByDifficulty = { easy: 0, medium: 0, hard: 0 }; // to be shown in summary
   selectedSubject: SubjectType | null = null;
   timer = 600; // 600 * 1000 ms timer : will submit if time exceeds
-  currentDifficulty: Difficulty = 'easy'; 
+  currentDifficulty: Difficulty = 'easy';
   showQuiz = false;
   currentQuestionIndex = 0;
   currentQuestion: Question | null = null;
@@ -37,14 +35,20 @@ export class QuizComponent implements OnInit, OnDestroy {
   totalNoEachType = { easyCount: 0, mediumCount: 0, hardCount: 0 }; // total number of questions of each type
   quizMetadata = { easyCount: 0, mediumCount: 0, hardCount: 0 }; // copy of totalNoEachType . will decrement if a question is answered for each type, used to disable next button if all questions of current difficulty level not answered
   intervalId: any;
-  errorMessage: string = ''; // error message to show if API fails
   subscription: Subscription | null = null;
-
+  loading: Boolean = false;
+  
+  ngOnInit(): void {
+      const data = this.route.snapshot.data['subjectList']
+      this.subjectList = data.subjects;
+    }
   // format timer string
   get formattedTime(): string {
     const minutes = Math.floor(this.timer / 60);
     const seconds = this.timer % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    return `${minutes.toString().padStart(2, '0')}:${seconds
+      .toString()
+      .padStart(2, '0')}`;
   }
 
   // start countdown timer
@@ -58,38 +62,40 @@ export class QuizComponent implements OnInit, OnDestroy {
     }, 1000);
   }
 
-  ngOnInit(): void {
-    this.quizService.setSubject(null);
-  }
+
 
   // when user selects a subject
-  onSelect(subject: SubjectType) {
+  onSubjectSelect(subject: SubjectType) {
     this.resetQuiz();
     this.selectedSubject = subject;
-
-    const sub = this.quizService.setSubject(subject)?.subscribe({
-      next: (response) => {
-        console.log('API Response: ', response);
-        this.quizService.questions = response.questions;
-        this.quizMetadata = response.metadata;
-        this.totalNoEachType = { ...this.quizMetadata };
-      },
-      error: (err) => {
-        console.error('Error loading questions:', err);
-        this.errorMessage = 'Failed to load questions. Please try again later.';
-      },
-    });
-
-    if (sub) this.subscription = sub;
   }
 
+  onStartQuiz() {
+    this.loading = true;
+    if (!this.showQuiz) {
+      const sub = this.quizService
+        .fetchSubjectQuestions(this.selectedSubject)
+        ?.subscribe({
+          next: (response) => {
+            this.quizService.questions = response.questions;
+            this.quizMetadata = Object.assign({}, response.metadata);
+            this.totalNoEachType = Object.assign({}, response.metadata);
+            this.loading = false;
+            this.startTimer();
+            this.loadQuestions();
+          },
+          error: (err) => {
+            console.error('Error loading questions:', err);
+          },
+        });
+
+      if (sub) this.subscription = sub;
+    }
+    this.showQuiz = true;
+  }
   // handle next button click
   onNextClick() {
-    if (!this.showQuiz) {
-      this.startTimer();
-      this.loadQuestions();
-      this.showQuiz = true;
-    } else if (this.currentQuestionIndex < this.questions.length - 1) {
+    if (this.currentQuestionIndex < this.questions.length - 1) {
       this.setCurrentQuestion(this.currentQuestionIndex + 1);
     }
   }
@@ -97,10 +103,15 @@ export class QuizComponent implements OnInit, OnDestroy {
   // check whether next button should be disabled
   isNextButtonDisabled(): boolean {
     const isLast = this.currentQuestionIndex === this.questions.length - 1;
-    const isNextDiff = this.questions[this.currentQuestionIndex + 1]?.difficulty !== this.currentDifficulty;
+    const isNextDiff =
+      this.questions[this.currentQuestionIndex + 1]?.difficulty !==
+      this.currentDifficulty;
     const remaining = this.quizMetadata[this.getDifficultyKey()];
 
-    return (!isLast && isNextDiff && remaining > 0) || (isLast && this.quizMetadata.hardCount > 0);
+    return (
+      (!isLast && isNextDiff && remaining > 0) ||
+      (isLast && this.quizMetadata.hardCount > 0)
+    );
   }
 
   // handle previous button click
@@ -121,18 +132,18 @@ export class QuizComponent implements OnInit, OnDestroy {
   onSubmitQuiz() {
     if (!this.selectedSubject) return;
 
-    this.quizService.submitQuiz(this.userAnswers, this.selectedSubject).subscribe({
-      next: (res) => {
-        console.log('Score submitted:', res);
-        this.correctAnswersByDifficulty.easy = res.easy;
-        this.correctAnswersByDifficulty.medium = res.medium;
-        this.correctAnswersByDifficulty.hard = res.hard;
-      },
-      error: (err) => {
-        console.error('Error submitting score:', err);
-        this.errorMessage = 'Failed to submit quiz. Please try again later.';
-      },
-    });
+    this.quizService
+      .submitQuiz(this.userAnswers, this.selectedSubject)
+      .subscribe({
+        next: (res) => {
+          this.correctAnswersByDifficulty.easy = res.easy;
+          this.correctAnswersByDifficulty.medium = res.medium;
+          this.correctAnswersByDifficulty.hard = res.hard;
+        },
+        error: (err) => {
+          console.error('Error submitting score:', err);
+        },
+      });
 
     this.showQuiz = false;
     this.afterSubmit = true;
@@ -177,7 +188,6 @@ export class QuizComponent implements OnInit, OnDestroy {
     this.afterSubmit = false;
     this.timer = 600;
     clearInterval(this.intervalId);
-    this.errorMessage = '';
   }
 
   // clean up subscriptions
@@ -187,5 +197,3 @@ export class QuizComponent implements OnInit, OnDestroy {
     clearInterval(this.intervalId);
   }
 }
-
-

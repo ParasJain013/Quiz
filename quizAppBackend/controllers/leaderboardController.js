@@ -33,24 +33,37 @@ const saveToLeaderboard = async (name, subject, score) => {
             await newEntry.save();
         }
     } catch (error) {
-        console.error('Error fetching subject questions:', error);
-        // res.status(500).json({ error: 'Internal Server Error' });
+        console.error('Internal Server Error', error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 };
 
 const fetchLeaderboardData = async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+  
     try {
-        const leaderboardDoc = await Leaderboard.find({});
-        // console.log(leaderboardDoc);
-        if (!leaderboardDoc) {
-            res.status(200).json({ msg: 'No Data Found' })
-        } else {
-            res.status(200).json(leaderboardDoc)
-        }
+      // Get total count
+      const totalCount = await Leaderboard.countDocuments();
+  
+      //paginated, sorted results
+      const leaderboardDoc = await Leaderboard.find({})
+        .sort({ highestScore: -1, highestScoreDate: -1 }) // first by score, then by time
+        .skip(skip)
+        .limit(limit);
+  
+      res.status(200).json({
+        data: leaderboardDoc,
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        totalCount
+      });
     } catch (error) {
-        console.error('Error fetching Leaderboard:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+      console.error('Error fetching Leaderboard:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
     }
-}
+  };
+  
 
 module.exports = { saveToLeaderboard, fetchLeaderboardData }

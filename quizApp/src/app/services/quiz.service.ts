@@ -1,76 +1,152 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
+import { catchError, Observable, of, throwError } from 'rxjs';
+import { environment } from '../environments/environment';
+import { shareReplay, tap } from 'rxjs';
+import { Router } from '@angular/router';
+
+// Types
 export type SubjectType = 'History' | 'Geography' | 'GK';
 export type Difficulty = 'easy' | 'medium' | 'hard';
-import { Observable } from 'rxjs';
-import { environment } from '../environments/environment';
 
-// quiz.service.ts
 export interface Question {
   q: string;
-  id:string;
+  id: string;
   options: { id: string; option: string }[];
   correctId: string;
   difficulty: Difficulty;
 }
+
 export interface LeaderboardEntry {
   name: string;
   highestScore: number;
   latestScore: number;
   subject: SubjectType;
   timestamp: number;
-  latestScoreDate: string
+  latestScoreDate: string;
 }
-export interface ApiQuestion {
-  q: string;
-  options: { id: string; option: string }[];
-  correctId: string;
-  difficulty: Difficulty;
-}
+
 export interface ApiResponse {
   subject: SubjectType;
   questions: Question[];
-  metadata: {easyCount:number,mediumCount:number,hardCount:number};
+  metadata: { easyCount: number; mediumCount: number; hardCount: number };
 }
-
-export type DifficultyLevel = {
-  easy: Question[];
-  medium: Question[];
-  hard: Question[];
-};
 
 @Injectable({
   providedIn: 'root',
 })
 export class QuizService {
-  constructor(private http: HttpClient) {}
-  private subjectSource = new BehaviorSubject<SubjectType | null>(null);
-  subjectList: SubjectType[] = ['History', 'Geography', 'GK'];
   private apiUrl = environment.apiUrl;
-  subject$ = this.subjectSource.asObservable();
-
-  submitQuiz(userAnswers: any, subject: SubjectType): Observable<any> {
-    const name = localStorage.getItem('name');
-    if (!name) {
-      console.error('No user name found');
-    }
-    const body = {answers:userAnswers , subject, user:name}
-
-    return this.http.post<any>(`${this.apiUrl}quiz/submitQuiz`, body);
-  }
+  private cache = new Map<SubjectType, ApiResponse>(); //  Using Map for caching
+  private leaderboardCache = new Map<number, LeaderboardEntry[]>(); // page-based cache
+  private previousAttemptsCache: any[] | null = null;
+  private isSubjectListFetched = false;
   questions: Question[] = [];
 
-  setSubject(subject: SubjectType | null): Observable<ApiResponse> | null {
-    this.subjectSource.next(subject);
+  constructor(private http: HttpClient, private router: Router) {}
+  subjectList = [];
+
+
+  fetchAllSubjects(): Observable<any> {
+    if (this.isSubjectListFetched) {
+      return of({subjects:this.subjectList}); 
+    }
+  
+    return this.http.get<{ subjects: any }>(
+      `${this.apiUrl}quiz/fetch-subjects`,
+      { withCredentials: true }
+    ).pipe(
+      tap((res) => {
+        this.isSubjectListFetched = true;
+        this.subjectList = res.subjects;
+      }),
+      catchError((err) => {
+        console.error('Failed to fetch subjects:', err);
+        if (err.error?.message === 'INVALID_TOKEN') {
+          this.router.navigate(['/login']);
+        }
+        return throwError(() => err);
+      })
+    );
+  }
+  
+
+  setSubjects(subjects:any) {
+    this.subjectList = subjects.subjects;
+  }
+  // When user selects subject
+  fetchSubjectQuestions(
+    subject: SubjectType | null
+  ): Observable<ApiResponse> | null {
     if (!subject) return null;
 
-    return this.http.get<ApiResponse>(`${this.apiUrl}quiz/getQuestions?subject=${subject}`);
+    // Check in-memory cache first
+    if (this.cache.has(subject)) {
+      const cachedResponse = this.cache.get(subject)!;
+      return of(cachedResponse);
+    }
+
+    // If not in cache, fetch from API and cache it
+    return this.http
+      .get<ApiResponse>(`${this.apiUrl}quiz/getQuestions?subject=${subject}`, {
+        withCredentials: true,
+      })
+      .pipe(
+        tap((data) => {
+          this.cache.set(subject, data); // cache it inside Map
+        }),
+        shareReplay(1)
+      );
   }
-  getSubject(): SubjectType | null {
-    return this.subjectSource.getValue();
+
+  // Submit quiz answers
+  submitQuiz(userAnswers: any, subject: SubjectType): Observable<any> {
+    const body = { answers: userAnswers, subject };
+    return this.http.post<any>(`${this.apiUrl}quiz/submitQuiz`, body, {
+      withCredentials: true,
+    });
   }
-  getLeaderboard(): Observable<LeaderboardEntry[]> {
-      return this.http.get<LeaderboardEntry[]>(`${this.apiUrl}leaderboard/getLeaderboard`)
+
+  // Get leaderboard
+  getLeaderboard(
+    page: number,
+    limit: number
+  ): Observable<{ data: LeaderboardEntry[]; totalPages: number }> {
+    if (this.leaderboardCache.has(page)) {
+      return of({
+        data: this.leaderboardCache.get(page)!,
+        totalPages: Math.ceil(this.leaderboardCache.size),
+      });
+    }
+
+    return this.http
+      .get<{ data: LeaderboardEntry[]; totalPages: number }>(
+        `${this.apiUrl}leaderboard/getLeaderboard?page=${page}&limit=${limit}`,
+        { withCredentials: true }
+      )
+      .pipe(
+        tap((res) => {
+          this.leaderboardCache.set(page, res.data);
+        }),
+        shareReplay(1)
+      );
+  }
+
+  // Cached previous attempts
+  getPreviousAttempt(): Observable<any> {
+    if (this.previousAttemptsCache) {
+      return of({ prevAttempts: this.previousAttemptsCache });
+    }
+
+    return this.http
+      .get<any>(`${this.apiUrl}attempt/previous-attempts`, {
+        withCredentials: true,
+      })
+      .pipe(
+        tap((res) => {
+          this.previousAttemptsCache = res.prevAttempts;
+        }),
+        shareReplay(1)
+      );
   }
 }
