@@ -46,7 +46,8 @@ export class QuizService {
   constructor(private http: HttpClient, private router: Router) {}
   subjectList = [];
 
-
+  quizAttemptedOnce:boolean = false;
+  quizAttemptData:any = {}
   fetchAllSubjects(): Observable<any> {
     if (this.isSubjectListFetched) {
       return of({subjects:this.subjectList}); 

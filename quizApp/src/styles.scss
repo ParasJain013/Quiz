@@ -1,5 +1,6 @@
-// styles.scss
+@import 'src/styles/variables';
 
+// Global layout
 html,
 body {
   height: 100%;
@@ -12,26 +13,24 @@ app-root {
   height: 100%;
   display: flex;
   flex-direction: column;
-
-  // background-color: #edf4c2;
-  // width: 30%;
 }
 
+
 .bg-color {
-  background-color: #faffd8;
+  background-color: $color-bg-light;
 }
 
 .navbar {
-  background: #ff6b35;
+  background: $color-primary;
   color: white;
 }
 
 .card-bg {
-  background-color: #edf4c2;
+  background-color: $color-card-bg;
 }
 
 .primary-text {
-  color: #eb5a3c;
+  color: $color-secondary;
 }
 
 app-login {
@@ -41,27 +40,27 @@ app-login {
 }
 
 .btn-take {
-  background-color: #df9755;
+  background-color: $color-btn-take;
 
   &:hover {
-    background-color: #ef923c;
+    background-color: $color-btn-take-hover;
   }
 }
 
 .option-btn {
-  background: #fed7aa;
-  border-color: #ff6b35;
-  box-shadow: 0 0 0 2px #ff6b35;
+  background: $color-option-bg;
+  border-color: $color-primary;
+  box-shadow: 0 0 0 2px $color-primary;
 
   &:hover,
   &.option-btn-selected:hover {
-    background: #ea580c;
-    border-color: #e55a28;
+    background: $color-option-hover;
+    border-color: $color-option-border;
   }
 }
 
 .option-btn-selected {
-  background: #ff6b35;
-  border-color: #ff6b35;
+  background: $color-option-selected;
+  border-color: $color-option-selected;
   color: white;
 }

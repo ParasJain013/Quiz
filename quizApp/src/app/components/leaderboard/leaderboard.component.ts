@@ -3,7 +3,6 @@ import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { QuizService, LeaderboardEntry } from '../../services/quiz.service';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 
-
 @Component({
   selector: 'app-leaderboard',
   templateUrl: './leaderboard.component.html',
@@ -16,12 +15,12 @@ export class LeaderboardComponent implements OnInit {
 
   sortedEntries: LeaderboardEntry[] = [];
   isLoading = false;
-  currentPage = 2;              // next page to load
+  currentPage = 2; // next page to load
   totalPages = 1;
   limit = 10;
   activeTab: string = 'leaderboard';
   prevAttempts: any = [];
-
+  quizAttempted: boolean = false;
   constructor(
     private quizService: QuizService,
     private router: Router,
@@ -36,29 +35,34 @@ export class LeaderboardComponent implements OnInit {
     };
     this.sortedEntries = pageData.data;
     this.totalPages = pageData.totalPages;
+    this.quizAttempted = this.quizService.quizAttemptedOnce;
+  }
+  navigateToSummary() {
+    this.router.navigate(['/quiz'], {
+      state: { showSummary: true },
+    });
   }
 
   loadMore(): void {
     if (this.isLoading || this.currentPage > this.totalPages) return;
     this.isLoading = true;
 
-    this.quizService.getLeaderboard(this.currentPage, this.limit)
-      .subscribe({
-        next: (res) => {
-          this.sortedEntries.push(...res.data);
-          this.currentPage++;
-          this.isLoading = false;
-        },
-        error: (err) => {
-          console.error('Error loading leaderboard:', err);
-          this.router.navigate(['/login']);
-          this.isLoading = false;
-        },
-      });
+    this.quizService.getLeaderboard(this.currentPage, this.limit).subscribe({
+      next: (res) => {
+        this.sortedEntries.push(...res.data);
+        this.currentPage++;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading leaderboard:', err);
+        this.router.navigate(['/login']);
+        this.isLoading = false;
+      },
+    });
   }
 
   onScroll(event: Event) {
-    const el = (event.target as HTMLElement);
+    const el = event.target as HTMLElement;
     if (el.scrollHeight - el.scrollTop <= el.clientHeight + 50) {
       this.loadMore();
     }

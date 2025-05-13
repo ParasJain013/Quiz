@@ -1,0 +1,14 @@
+@import 'src/styles/variables';
+.back-btn {
+  background-color: transparent;
+  color: $color-primary;
+  border: none;
+  font-size: 1rem;
+  transition: transform 0.2s ease, color 0.2s ease;
+  cursor: pointer;
+}
+
+.back-btn:hover {
+  transform: scale(1.1);
+  color: $color-secondary;
+}

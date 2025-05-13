@@ -18,7 +18,22 @@ type Difficulty = 'easy' | 'medium' | 'hard';
   standalone: true,
 })
 export class QuizComponent implements OnInit, OnDestroy {
-  constructor(private quizService: QuizService, private route: ActivatedRoute, private router:Router) {}
+  constructor(
+    private quizService: QuizService,
+    private route: ActivatedRoute,
+    private router: Router
+  ) {
+    const nav = this.router.getCurrentNavigation();
+    if (
+      (nav?.extras?.state?.['showSummary'] ?? false) &&
+      this.quizService.quizAttemptedOnce
+    ) {
+      this.afterSubmit = true;
+      this.correctAnswersByDifficulty =
+        this.quizService.quizAttemptData.correctAnswersByDifficulty;
+      this.totalNoEachType = this.quizService.quizAttemptData.totalNoEachType;
+    }
+  }
 
   subjectList: SubjectType[] = []; // all the subjects to be shown
   isHoveringOnDisabled = false; // tooltip on next button
@@ -37,11 +52,11 @@ export class QuizComponent implements OnInit, OnDestroy {
   intervalId: any;
   subscription: Subscription | null = null;
   loading: Boolean = false;
-  
+
   ngOnInit(): void {
-      const data = this.route.snapshot.data['subjectList']
-      this.subjectList = data.subjects;
-    }
+    const data = this.route.snapshot.data['subjectList'];
+    this.subjectList = data.subjects;
+  }
   // format timer string
   get formattedTime(): string {
     const minutes = Math.floor(this.timer / 60);
@@ -61,8 +76,6 @@ export class QuizComponent implements OnInit, OnDestroy {
       }
     }, 1000);
   }
-
-
 
   // when user selects a subject
   onSubjectSelect(subject: SubjectType) {
@@ -139,6 +152,11 @@ export class QuizComponent implements OnInit, OnDestroy {
           this.correctAnswersByDifficulty.easy = res.easy;
           this.correctAnswersByDifficulty.medium = res.medium;
           this.correctAnswersByDifficulty.hard = res.hard;
+          this.quizService.quizAttemptedOnce = true;
+          this.quizService.quizAttemptData = {
+            correctAnswersByDifficulty: { ...this.correctAnswersByDifficulty },
+            totalNoEachType: { ...this.totalNoEachType },
+          };
         },
         error: (err) => {
           console.error('Error submitting score:', err);
