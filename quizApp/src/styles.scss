@@ -1,0 +1,66 @@
+@import 'src/styles/variables';
+
+// Global layout
+html,
+body {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+app-root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+
+.bg-color {
+  background-color: $color-bg-light;
+}
+
+.navbar {
+  background: $color-primary;
+  color: white;
+}
+
+.card-bg {
+  background-color: $color-card-bg;
+}
+
+.primary-text {
+  color: $color-secondary;
+}
+
+app-login {
+  display: flex;
+  height: 100%;
+  flex-grow: 1;
+}
+
+.btn-take {
+  background-color: $color-btn-take;
+
+  &:hover {
+    background-color: $color-btn-take-hover;
+  }
+}
+
+.option-btn {
+  background: $color-option-bg;
+  border-color: $color-primary;
+  box-shadow: 0 0 0 2px $color-primary;
+
+  &:hover,
+  &.option-btn-selected:hover {
+    background: $color-option-hover;
+    border-color: $color-option-border;
+  }
+}
+
+.option-btn-selected {
+  background: $color-option-selected;
+  border-color: $color-option-selected;
+  color: white;
+}

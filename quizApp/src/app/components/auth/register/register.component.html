@@ -1,0 +1,49 @@
+<div class="container-fluid d-flex flex-column justify-content-center align-items-center px-3">
+    <div class="w-100 w-sm-75 w-md-50 w-lg-33 bg-white rounded-4 shadow p-4" style="max-width: 500px">
+        <h4 class="mb-4 primary-text">Tell Us About Yourself!</h4>
+
+        <div class="mb-3 position-relative">
+            <label for="nameInput" class="form-label fw-semibold">Name</label>
+            <input type="text" class="form-control" id="nameInput" placeholder="Enter Your Name" [(ngModel)]="name"
+                (ngModelChange)="onNameChange($event)" />
+            <label for="emailInput" class="form-label fw-semibold">Email</label>
+            <input type="email" class="form-control" id="emailInput" placeholder="Email" [(ngModel)]="email"
+                (ngModelChange)="onEmailChange($event)" />
+            <span class="d-block fs-7 text-danger" *ngIf="!validEmail">Please Enter a Valid Email</span>
+            <span class="d-block fs-7 text-danger" *ngIf="alreadyExist">User Already Exists</span>
+
+
+            <div class="mb-3 position-relative">
+                <label for="passwordInput" class="form-label">Password</label>
+
+                <input [type]="showPassword ? 'text' : 'password'" class="form-control pe-5" id="passwordInput"
+                    placeholder="Password" [(ngModel)]="password" (ngModelChange)="onPasswordChange($event)" />
+
+                <!-- Eye icon -->
+                <span class="position-absolute top-50 end-0 translate-end-y me-3 z-3" style="cursor: pointer;"
+                    (click)="showPassword = !showPassword">
+                    <img [src]="showPassword ? '../../assets/eye-show-svgrepo-com.svg' : '../../assets/eye-off-svgrepo-com.svg'"
+                        alt="Toggle Password" width="20" height="20" />
+                </span>
+            </div>
+            <span class="d-block fs-7 text-danger" *ngIf="!validPassword">Password Must have atleast one special
+                character, one uppercase letter,one lowercase letter, one number and atleast of 8 characters</span>
+
+            <span class="text-danger" *ngIf="invalidCredentials">Invalid Credentials</span>
+        </div>
+
+
+        <button class="btn w-100 mt-3" type="submit" [disabled]="!validEmail || !password"
+            [ngClass]="{ 'option-btn-selected': validEmail && password, 'btn-secondary': !validEmail || !password }"
+            (click)="signUp()">
+            Sign up
+        </button>
+        <a routerLink="/login" class="text-primary fw-semibold" style="cursor: pointer; text-decoration: none;"
+            (mouseover)="hover = true" (mouseout)="hover = false"
+            [ngStyle]="{ 'text-decoration': hover ? 'underline' : 'none' }">
+            Already SignedUp? Signin here
+        </a>
+
+
+    </div>
+</div>
