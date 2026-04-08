@@ -433,6 +433,93 @@ This stack is intentionally mostly empty. It contains `removed {}` blocks so Ter
 - `terraform/modules/s3/outputs.tf` — bucket id/arn/domain name outputs.
 
 ---
+## How the Terraform files are connected (wiring)
+
+Terraform loads all `*.tf` files in a stack directory into **one configuration** (same state, same provider settings). Files are “connected” mainly through:
+- **Variables** (`vars.tf`) → referenced from `main.tf` and other `.tf` files in the same stack.
+- **Modules** (`module "..."`) → `main.tf` passes inputs, modules return outputs, and other code uses those outputs.
+- **Data sources** (`data "..."`) → read existing AWS resources (or manually-created resources) and feed values into modules/resources.
+- **Cross-stack dependencies** → one stack creates resources, another stack references them via `data` lookups (no `terraform_remote_state` used here).
+
+### Backend stack wiring (`backend/infra/`)
+
+**Orchestration**
+- `backend/infra/main.tf` is the “hub”: it defines provider + locals and wires modules together.
+- `backend/infra/vars.tf` defines the inputs that `backend/infra/main.tf` consumes (VPC CIDR/subnets/AZs, DB naming, optional domains, prefixes, etc.).
+- `backend/infra/outputs.tf` exposes VPC/subnet slices for potential reuse (human visibility + future stacking).
+
+**Network + database → used everywhere**
+- `backend/infra/main.tf` creates:
+  - `module.vpc` (`backend/infra/vpc/*`) → outputs `vpc_id`, `public_subnets`, `private_subnets`
+  - `module.rds` (`backend/infra/rds/*`) → outputs `security_group_id`, `rds_hostname`, `cluster_identifier`
+- Those outputs are then consumed by:
+  - `module.apigateway` (Lambda VPC config needs `subnet_ids` + `security_group_id`)
+  - `module.migrations_lambda` (same VPC attachment)
+  - `backend/infra/backend_ssm.tf` (writes `/backend/DATABASE_HOST` using `module.rds.rds_hostname`)
+  - `backend/infra/monitoring.tf` (RDS alarms use `module.rds.cluster_identifier`)
+
+**Auth (Cognito) → API + frontend config**
+- `backend/infra/main.tf` creates `module.cognito` (`backend/infra/cognito/*`) and then:
+  - passes `module.cognito.cognito_pool_arn` into `module.apigateway` (so Lambdas can call Cognito APIs via IAM policy)
+  - writes Cognito identifiers to SSM in `backend/infra/shared_ssm.tf` (e.g., `/shared/COGNITO_APP_CLIENT_ID`, `/shared/COGNITO_USER_POOL_ID`)
+
+**ECR tag + image selection**
+- `backend/infra/vars.tf` runs `data "external"` programs that call `backend/infra/scripts/get_latest_ecr_tag.sh`.
+- The resolved tags become locals (`local.app_version`, `local.text_analysis_app_version`, `local.frontend_app_version`) used by:
+  - `module.apigateway` (Lambda image tags)
+  - `module.migrations_lambda` (migrations Lambda image tag)
+  - `module.text_analysis_ecs` / `module.frontend_ecs` (ECS task image tags)
+
+**API Gateway + Lambdas**
+- `backend/infra/main.tf` creates `module.apigateway` (`backend/infra/apigateway_lambda/*`), passing:
+  - VPC attachment (`subnet_ids` + `security_group_id`)
+  - ECR repository URLs (from `terraform/modules/ecr` outputs)
+  - Cognito pool ARN (from `module.cognito`)
+  - Bucket ARNs (from S3 `data` lookups; see next point)
+- `backend/infra/main.tf` then creates `module.scheduler` (`backend/infra/scheduler/*`), passing:
+  - `module.apigateway.handler_lambda_function_name`
+  - `module.apigateway.handler_lambda_arn`
+
+**S3 buckets are created in the frontend stack, referenced in backend**
+- `frontend/infra/main.tf` creates S3 buckets via `terraform/modules/s3`.
+- `backend/infra/main.tf` references those buckets using:
+  - `data "aws_s3_bucket" "audio_files"`, `assets`, `transcoded`
+- Those `data` values are then used by:
+  - `module.apigateway` (IAM policy needs bucket ARNs; handler uses bucket names/ARNs)
+  - `backend/infra/backend_ssm.tf` and `backend/infra/shared_ssm.tf` (SSM parameters point to bucket IDs and are used by app code)
+- The `removed { from = module.audio_files/assets/transcoded }` blocks in `backend/infra/main.tf` exist because bucket ownership was moved to `frontend/infra` without deleting buckets.
+
+**SSM files connect app runtime configuration to compute**
+- `backend/infra/shared_ssm.tf`, `backend/infra/backend_ssm.tf`, `backend/infra/frontend_ssm.tf`, `backend/infra/text_analysis_ssm.tf` write parameters under:
+  - `/scomp/${AWS_ENVIRONMENT}/shared/*`
+  - `/scomp/${AWS_ENVIRONMENT}/backend/*`
+  - `/scomp/${AWS_ENVIRONMENT}/frontend/*`
+  - `/scomp/${AWS_ENVIRONMENT}/text-analysis/*`
+- `module.frontend_ecs` and `module.text_analysis_ecs` (from `terraform/modules/ecs`) read those params at runtime via task role permissions and inject them as environment variables.
+- `module.apigateway` configures Lambda IAM policies that allow reading `/shared/*` and `/backend/*` SSM paths, and decrypting SecureStrings.
+
+**Monitoring connects to names/ARNs produced by modules**
+- `backend/infra/monitoring.tf` alarms/dashboards reference:
+  - API Gateway name pattern used in `module.apigateway`
+  - Lambda function names used in `module.apigateway`
+  - ECS cluster/service names produced by `terraform/modules/ecs`
+  - RDS cluster identifier from `backend/infra/rds/*`
+
+### Frontend stack wiring (`frontend/infra/`)
+
+- `frontend/infra/main.tf` is the hub:
+  - reads shared CORS origins from SSM (`/scomp/${AWS_ENVIRONMENT}/shared/CORS_ALLOWED_ORIGINS`)
+  - creates S3 buckets via `terraform/modules/s3` (assets/audio-files/transcoded)
+  - creates CloudFront via `frontend/infra/cloudfront/main.tf` module (`module.webapp`) and passes the **assets bucket outputs** to it
+  - creates an S3 bucket policy allowing CloudFront OAC to read from the assets bucket, using `module.webapp.distribution_arn`
+- `frontend/infra/monitoring.tf` depends on CloudFront outputs (`module.webapp.distribution_id`) to alarm on CloudFront 5xx.
+
+Important dependency note: if the shared SSM parameter doesn’t exist yet, `frontend/infra/main.tf` can fail unless `AWS_CORS_ALLOWED_ORIGINS` is provided (because it reads SSM via `data "aws_ssm_parameter"`).
+
+### Legacy text-analysis stack wiring (`text_analysis/infra/`)
+
+- `text_analysis/infra/main.tf` does not create infrastructure anymore.
+- Its `removed { ... }` blocks “disconnect” old resources from the legacy state so those resources can be managed by `backend/infra/main.tf` instead (without deleting them).
 
 ## Practical notes (things you’ll hit while deploying)
 
