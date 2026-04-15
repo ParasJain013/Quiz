@@ -1,27 +1,18 @@
 <nav class="navbar">
   <div class="container-fluid d-flex flex-row">
     <div class="d-flex align-items-center">
-      <img
-        src="../../../assets/quizicon.png"
-        alt="Quiz Icon"
-        class="img-fluid me-2"
-        style="height: 30px"
-      />
-      <a class="navbar-brand mb-0 h1" href="#">Quiz</a>
+      <img src="../../../assets/quizicon.png" alt="Quiz Icon" class="img-fluid me-2" style="height: 30px" />
+      <a class="navbar-brand mb-0 h1" [routerLink]="['/']" style="cursor: pointer;">Quiz</a>
     </div>
 
-    <ul
-      class="navbar-nav flex-row justify-content-end flex-grow-1 mb-2 mb-lg-0"
-    >
-      <!-- <li class="nav-item">
-        <a class="nav-link active" aria-current="page" href="#">Leaderboard</a>
-      </li> -->
-      <li class="nav-item px-2" *ngIf="displayLogout">
-        <button
-          *ngIf="displayLogout"
-          class="btn btn-outline-danger border-white text-white"
-          (click)="handleLogout()"
-        >
+    <ul *ngIf="displayLogout" class="navbar-nav flex-row justify-content-end flex-grow-1 mb-2 mb-lg-0">
+      <li class="nav-item px-2">
+        <button class="btn btn-outline-danger border-white text-white" [routerLink]="['/leaderboard']">
+          Leaderboard
+        </button>
+      </li>
+      <li class="nav-item px-2">
+        <button class="btn btn-outline-danger border-white text-white" (click)="handleLogout()">
           Logout
         </button>
       </li>
